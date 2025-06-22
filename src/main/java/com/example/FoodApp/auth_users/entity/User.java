@@ -1,5 +1,10 @@
 package com.example.FoodApp.auth_users.entity;
 
+import com.example.FoodApp.cart.entity.Cart;
+import com.example.FoodApp.order.entity.Order;
+import com.example.FoodApp.payment.entity.Payment;
+import com.example.FoodApp.review.entity.Review;
+import com.example.FoodApp.role.entity.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
