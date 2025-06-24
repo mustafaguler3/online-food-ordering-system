@@ -71,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public Response<?> login(LoginRequest loginRequest) {
+    public Response<LoginResponse> login(LoginRequest loginRequest) {
 
         log.info("Inside login()");
 
@@ -96,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
         loginResponse.setToken(token);
         loginResponse.setRoles(roleNames);
 
-        return Response.builder()
+        return Response.<LoginResponse>builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("Login Successfully")
                 .data(loginResponse)
