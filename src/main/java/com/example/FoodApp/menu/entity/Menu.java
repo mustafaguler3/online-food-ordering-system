@@ -1,6 +1,8 @@
 package com.example.FoodApp.menu.entity;
 
 import com.example.FoodApp.category.entity.Category;
+import com.example.FoodApp.order.entity.OrderItem;
+import com.example.FoodApp.review.entity.Review;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,10 +19,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Menu {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    private Long id;
     private String name;
     private String description;
     private BigDecimal price;
@@ -32,6 +34,7 @@ public class Menu {
     private List<OrderItem> orderItems;
     @OneToMany(mappedBy = "menu")
     private List<Review> reviews;
+
 }
 
 

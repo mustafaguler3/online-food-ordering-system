@@ -1,5 +1,6 @@
 package com.example.FoodApp.cart.dtos;
 
+import com.example.FoodApp.menu.dtos.MenuDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
