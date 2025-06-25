@@ -1,6 +1,7 @@
 package com.example.FoodApp.menu.dtos;
 
 import com.example.FoodApp.category.entity.Category;
+import com.example.FoodApp.review.dtos.ReviewDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.CascadeType;
