@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        body {
+            background-color: #f4f4f4 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-family: 'Arial', sans-serif;
+            font-size: 16px;
+            color: #333;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1)
+        }
+        h1 {
+            color: #ff6600;
+            text-align: center;
+            font-size: 24px;
+        }
+        p {
+            margin-bottom: 16px
+        }
+        .order-details {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 10px
+        }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        .total {
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 10px
+            color: #ff6600;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #ff6600;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: center;
+            transaction: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #cc5200;
+        }
+        .footer {
+            margin-top: 25px;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+        .greeting {
+            font-style: italic;
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Order Confirmation</h1>
+        <p class="greeting">Dear<span th:text="${customerName}"></span></p>
+        <p>Thank you for your order! We're excited to get your items to you.</p>
+        <div class="order-details">
+            <h2>Order Details</h2>
+            <p>Order ID: <span th:text="${orderId}"></span></p>
+            <p>Order Date: <span th:text="${orderDate}"></span></p>
+            <p>Delivery Address: <span th:text="${deliveryAddress}"></span></p>
+            <p>Total Items: <span th:text="${totalItems}"></span></p>
+            <div class="order-items" th:utext="${orderItemsHtml}">
+            </div>
+            <p class="total">Total Amount: <span th:text="${totalAmount}"></span></p>
+        </div>
+
+        <a class="button" th:href="${paymentLink}">Complete Your Order</a>
+        <p>Click the button above to securely complete your payment and finalize your order.</p>
+        <div class="footer">
+            <p>If you have any questions, please contact us at support@mgdev.com</p>
+            <p><span th:text="${currentYear}">2025</span>Your Mg Food. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
