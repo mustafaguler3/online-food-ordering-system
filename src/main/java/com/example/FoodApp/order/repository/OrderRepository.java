@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order,Long> {
     Page<Order> findByOrderStatus(OrderStatus orderStatus, Pageable pageable);
-    List<Order> findByUserOrderByOrderDataDesc(User user);
+    List<Order> findByUserOrderByOrderDateDesc(User user);
     @Query("select count(DISTINCT o.user.id) from Order o")
     long countDistinctUsers();
 }
