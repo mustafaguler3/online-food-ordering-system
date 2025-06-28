@@ -13,7 +13,7 @@ public interface OrderService {
     Response<OrderDTO> getOrderById(Long id);
     Response<Page<OrderDTO>> getAllOrders(OrderStatus orderStatus,int page,int size);
     Response<List<OrderDTO>> getOrdersOfUser();
-    Response<OrderItemDTO> getOderItemById(Long orderItemId);
+    Response<OrderItemDTO> getOrderItemById(Long orderItemId);
     Response<OrderDTO> updateOrderStatus(OrderDTO orderDTO);
     Response<Long> countUniqueCustomers();
 }

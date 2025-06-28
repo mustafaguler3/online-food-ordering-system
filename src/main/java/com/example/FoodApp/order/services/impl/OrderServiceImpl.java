@@ -216,7 +216,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Response<OrderItemDTO> getOderItemById(Long orderItemId) {
+    public Response<OrderItemDTO> getOrderItemById(Long orderItemId) {
 
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
                 .orElseThrow(() -> new NotFoundException("Order item not found"));
