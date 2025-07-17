@@ -19,8 +19,8 @@ import java.time.LocalDateTime;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ReviewDTO {
     private long id;
-    private long menuId;
-    private long orderId;
+    private Long menuId;
+    private Long orderId;
     private String userName;
     private String menuName;
     @NotNull(message = "Rating is required")
