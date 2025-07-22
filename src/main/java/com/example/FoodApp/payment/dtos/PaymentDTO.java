@@ -4,6 +4,7 @@ import com.example.FoodApp.auth_users.dtos.UserDTO;
 import com.example.FoodApp.auth_users.entity.User;
 import com.example.FoodApp.enums.PaymentGateway;
 import com.example.FoodApp.enums.PaymentStatus;
+import com.example.FoodApp.order.dtos.OrderDTO;
 import com.example.FoodApp.order.entity.Order;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -25,7 +26,7 @@ public class PaymentDTO {
     private String failureReason;
     private LocalDateTime paymentDate;
     private boolean success;
-    private OderDTO order;
+    private OrderDTO order;
     private UserDTO user;
 }
 
