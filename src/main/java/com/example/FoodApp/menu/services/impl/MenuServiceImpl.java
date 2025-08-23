@@ -35,7 +35,7 @@ public class MenuServiceImpl implements MenuService {
     private final MenuRepository menuRepository;
     private final CategoryRepository categoryRepository;
     private final ModelMapper modelMapper;
-    private final AWSS3Service awss3Service;
+    //private final AWSS3Service awss3Service;
 
     @Override
     public Response<MenuDTO> createMenu(MenuDTO menuDTO) {
@@ -52,8 +52,8 @@ public class MenuServiceImpl implements MenuService {
         }
 
         String imageName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
-        URL s3Url = awss3Service.uploadFile("menus/" +imageName,imageFile);
-        imageUrl = s3Url.toString();
+        //URL s3Url = awss3Service.uploadFile("menus/" +imageName,imageFile);
+        //imageUrl = s3Url.toString();
 
         Menu menu = Menu.builder()
                 .name(menuDTO.getName())
@@ -89,13 +89,14 @@ public class MenuServiceImpl implements MenuService {
             // delete the old image from S3 if it exists
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 String keyName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
-                awss3Service.deleteFile("menus/"+keyName);
+                //awss3Service.deleteFile("menus/"+keyName);
                 log.info("Deleted old menu image from s3");
             }
             // upload new image
             String imageName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
-            URL newImageUrl = awss3Service.uploadFile("menus/"+imageName,imageFile);
-            imageUrl = newImageUrl.toString();
+            //URL newImageUrl = awss3Service.uploadFile("menus/"+imageName,imageFile);
+
+            //imageUrl = newImageUrl.toString();
         }
         if (menuDTO.getName() != null && !menuDTO.getName().isBlank()) existingMenu.setName(menuDTO.getName());
         if (menuDTO.getDescription() != null && !menuDTO.getDescription().isBlank()) existingMenu.setDescription(menuDTO.getDescription());
@@ -142,7 +143,7 @@ public class MenuServiceImpl implements MenuService {
         String imageUrl = menuToDelete.getImageUrl();
         if (imageUrl != null && !imageUrl.isEmpty()) {
             String keyName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
-            awss3Service.deleteFile("menus/"+keyName);
+            //awss3Service.deleteFile("menus/"+keyName);
             log.info("Deleted image from S3 menus/"+keyName);
         }
 

@@ -1,6 +1,7 @@
 package com.example.FoodApp.payment.controller;
 
 import com.example.FoodApp.payment.dtos.PaymentDTO;
+import com.example.FoodApp.payment.service.PaymentService;
 import com.example.FoodApp.response.Response;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +24,8 @@ public class PaymentController {
     }
 
     @PutMapping("/update")
-    public void updatePayment(@RequestBody PaymentDTO paymentDTO) {
-        return ResponseEntity.ok(paymentService.updatePaymentForOrder(paymentDTO));
+    public void updateOrderAfterPayment(@RequestBody PaymentDTO paymentRequest){
+        paymentService.updatePaymentForOrder(paymentRequest);
     }
 
     @GetMapping("/all")

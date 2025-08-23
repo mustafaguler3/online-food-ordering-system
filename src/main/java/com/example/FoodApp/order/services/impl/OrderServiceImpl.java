@@ -55,7 +55,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartService cartService;
     private final CartRepository cartRepository;
 
-    @Value("${base.payment.link}")
+    //@Value("${base.payment.link}")
     private String basePaymentLink;
 
     @Override

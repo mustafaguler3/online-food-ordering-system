@@ -18,15 +18,15 @@ import java.util.List;
 public class RoleController {
 
     private final RoleService roleService;
-    @PostMapping
+    @PostMapping("/new")
     public ResponseEntity<Response<RoleDTO>> createRole(@RequestBody @Valid RoleDTO roleDTO) {
         return ResponseEntity.ok(roleService.createRole(roleDTO));
     }
-    @PostMapping
+    @PostMapping("/update")
     public ResponseEntity<Response<RoleDTO>> updateRole(@RequestBody @Valid RoleDTO roleDTO) {
         return ResponseEntity.ok(roleService.updateRole(roleDTO));
     }
-    @PostMapping
+    @GetMapping
     public ResponseEntity<Response<List<RoleDTO>>> getAllRoles() {
         return ResponseEntity.ok(roleService.getAllRoles());
     }

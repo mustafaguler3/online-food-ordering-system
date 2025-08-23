@@ -28,12 +28,40 @@ public class SecurityFilter {
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
+    private final String[] publicUrl = {
+            "/api/user",
+            "/api/menus/**",
+            "/api/**",
+            "/api/user/**",
+            "/api/auth/login",
+            "/api/auth/register",
+            "/home",
+            "/images/**",
+            "/verify",
+            "/*.css",
+            "/*.js",
+            "/*.js.map",
+            "/images/**",
+            "/uploads/**",
+            "/uploads/hotels",
+            "/uploads/users/**",
+            "/resources/**",
+            "/static/**",
+            "/css/**",
+            "/icon/**",
+            "/js/**",
+            "/images/**",
+            "/favicon.ico",
+            "/v2/api-docs",
+            "/error",
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler).authenticationEntryPoint(authenticationEntryPoint))
-                .authorizeHttpRequests(req -> req.requestMatchers("/api/auth/**","/api/categories/**","/api/menu/**","/api/reviews/**")
+                .authorizeHttpRequests(req -> req.requestMatchers(publicUrl)
                         .permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(mag -> mag.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -48,7 +76,7 @@ public class SecurityFilter {
     }
 
     @Bean
-    private AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }

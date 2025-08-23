@@ -1,5 +1,6 @@
 package com.example.FoodApp.category.entity;
 
+import com.example.FoodApp.menu.entity.Menu;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

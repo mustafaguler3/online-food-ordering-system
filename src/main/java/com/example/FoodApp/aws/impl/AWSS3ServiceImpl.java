@@ -13,12 +13,12 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.net.URL;
-@Service
+//@Service
 @Slf4j
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class AWSS3ServiceImpl implements AWSS3Service {
 
-    private final S3Client s3Client;
+    private S3Client s3Client;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;

@@ -50,14 +50,15 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Value("${stripe.api.secret.key}")
     private String secretKey;
-    @Value("${frontend.base.url}")
+
+    //@Value("${frontend.base.url}")
     private String frontendBaseUrl;
 
 
     @Override
     public Response<?> initializePayment(PaymentDTO paymentDTO) {
 
-        Stripe.apiKey = secretKey;
+        Stripe.apiKey = this.secretKey;
         Long orderId = paymentDTO.getOrderId();
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new NotFoundException("Order not found"));
 
@@ -96,9 +97,13 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public void updatePaymentForOrder(PaymentDTO paymentDTO) {
 
-        Long orderId = paymentDTO.getOrderId();
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new NotFoundException("Order not found"));
+        log.info("inside updatePaymentForOrder()");
 
+        Long orderId = paymentDTO.getOrderId();
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order Not Found"));
+
+        //  Build payment entity to save
         Payment payment = new Payment();
         payment.setPaymentGateway(PaymentGateway.STRIPE);
         payment.setAmount(paymentDTO.getAmount());
@@ -106,6 +111,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setPaymentStatus(paymentDTO.isSuccess() ? PaymentStatus.COMPLETED : PaymentStatus.FAILED);
         payment.setPaymentDate(LocalDateTime.now());
         payment.setOrder(order);
+        payment.setUser(order.getUser());
 
         if (!paymentDTO.isSuccess()) {
             payment.setFailureReason(paymentDTO.getFailureReason());
@@ -113,41 +119,51 @@ public class PaymentServiceImpl implements PaymentService {
 
         paymentRepository.save(payment);
 
+        // Prepare email context. Context should be. imported from thymeleaf
         Context context = new Context(Locale.getDefault());
-        context.setVariable("customerName",order.getUser().getName());
-        context.setVariable("orderId",order.getId());
+        context.setVariable("customerName", order.getUser().getName());
+        context.setVariable("orderId", order.getId());
         context.setVariable("currentYear", Year.now().getValue());
-        context.setVariable("amount","$" + paymentDTO.getAmount());
+        context.setVariable("amount", "$" + paymentDTO.getAmount());
 
         if (paymentDTO.isSuccess()) {
             order.setPaymentStatus(PaymentStatus.COMPLETED);
             order.setOrderStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
 
-            context.setVariable("transactionId",paymentDTO.getTransactionId());
-            context.setVariable("paymentDate",LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm")));
-            context.setVariable("frontendBaseUrl",this.frontendBaseUrl);
 
-            String emailBody = templateEngine.process("payment-success",context);
+            log.info("PAYMENT IS SUCCESSFUL ABOUT TO SEND EMAIL");
+
+            // Add success-specific variables
+            context.setVariable("transactionId", paymentDTO.getTransactionId());
+            context.setVariable("paymentDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a")));
+            context.setVariable("frontendBaseUrl", this.frontendBaseUrl);
+
+            String emailBody = templateEngine.process("payment-success", context);
+
+            log.info("HAVE GOTTEN TEMPLATE");
 
             notificationService.sendEmail(NotificationDTO.builder()
                     .recipient(order.getUser().getEmail())
-                    .subject("Payment successfully - Order #" + order.getId())
+                    .subject("Payment Successful - Order #" + order.getId())
                     .body(emailBody)
                     .isHtml(true)
                     .build());
-        }else {
+        } else {
             order.setPaymentStatus(PaymentStatus.FAILED);
             order.setOrderStatus(OrderStatus.CANCELLED);
             orderRepository.save(order);
 
-            context.setVariable("failureReason",paymentDTO.getFailureReason());
 
-            String emailBody = templateEngine.process("payment-failed",context);
+            log.info("PAYMENT IS FAILED ABOUT TO SEND EMAIL");
+            // Add failure-specific variables
+            context.setVariable("failureReason", paymentDTO.getFailureReason());
+
+            String emailBody = templateEngine.process("payment-failed", context);
 
             notificationService.sendEmail(NotificationDTO.builder()
                     .recipient(order.getUser().getEmail())
-                    .subject("Payment failed - Order #" + order.getId())
+                    .subject("Payment Failed - Order #" + order.getId())
                     .body(emailBody)
                     .isHtml(true)
                     .build());

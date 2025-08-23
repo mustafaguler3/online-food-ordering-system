@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
     private final NotificationService notificationService;
-    private final AWSS3Service awss3Service;
+    //private final AWSS3Service awss3Service;
 
     @Override
     public User getCurrentLoggedInUser() {
@@ -44,7 +44,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Response<List<UserDTO>> getAllUser() {
         log.info("Inside getAllUser()");
-        List<User> users = userRepository.findAll(Sort.Direction.DESC,"id");
+        List<User> users = userRepository.findAll(Sort.by(Sort.Direction.DESC,"id"));
         List<UserDTO> userDTOS = modelMapper.map(users,new TypeToken<List<UserDTO>>() {
         }.getType());
         return Response.<List<UserDTO>>builder()
@@ -77,12 +77,12 @@ public class UserServiceImpl implements UserService {
         if (imageFile != null && !imageFile.isEmpty()) {
             if (profileUrl != null && !profileUrl.isEmpty()) {
                 String keyName = profileUrl.substring(profileUrl.lastIndexOf("/") + 1);
-                awss3Service.deleteFile("profile/" + keyName);
+                //awss3Service.deleteFile("profile/" + keyName);
                 log.info("Deleted old profile image from s3");
             }
             String imageName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
-            URL newImageUrl = awss3Service.uploadFile("profile/"+imageName,imageFile);
-            user.setProfileUrl(newImageUrl.toString());
+            //URL newImageUrl = awss3Service.uploadFile("profile/"+imageName,imageFile);
+            //user.setProfileUrl(newImageUrl.toString());
         }
 
         // update user details
