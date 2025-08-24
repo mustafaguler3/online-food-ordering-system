@@ -58,7 +58,6 @@ public class UserServiceImpl implements UserService {
     public Response<UserDTO> getOwnAccountDetails() {
 
         User user = getCurrentLoggedInUser();
-
         UserDTO userDTO = modelMapper.map(user, UserDTO.class);
 
         return Response.<UserDTO>builder()

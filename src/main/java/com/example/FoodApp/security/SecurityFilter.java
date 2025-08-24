@@ -29,10 +29,10 @@ public class SecurityFilter {
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
     private final String[] publicUrl = {
-            "/api/user",
             "/api/menus/**",
-            "/api/**",
-            "/api/user/**",
+            "/api/auth/**",
+            "/api/categories/**",
+            "/api/users/**",
             "/api/auth/login",
             "/api/auth/register",
             "/home",
@@ -43,14 +43,11 @@ public class SecurityFilter {
             "/*.js.map",
             "/images/**",
             "/uploads/**",
-            "/uploads/hotels",
-            "/uploads/users/**",
             "/resources/**",
             "/static/**",
             "/css/**",
             "/icon/**",
             "/js/**",
-            "/images/**",
             "/favicon.ico",
             "/v2/api-docs",
             "/error",

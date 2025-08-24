@@ -19,25 +19,21 @@ import java.nio.file.StandardCopyOption;
 public class ImageController {
 
     private final Path root = Paths.get("uploads");
-
     @PostMapping("/upload")
     public String uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
         if (!Files.exists(root)) {
             Files.createDirectories(root); // klasör yoksa oluştur
         }
-
         String filename = file.getOriginalFilename();
         Path filePath = root.resolve(filename);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         return "/images/" + filename; // frontend’de kullanacağın URL
     }
-
     @GetMapping("/{filename}")
     public ResponseEntity<?> getImage(@PathVariable String filename) throws MalformedURLException {
         Path file = root.resolve(filename);
         UrlResource resource = new UrlResource(file.toUri());
-
         if (resource.exists() || resource.isReadable()) {
             return ResponseEntity.ok()
                     .contentType(MediaType.IMAGE_JPEG)

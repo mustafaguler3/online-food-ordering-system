@@ -64,6 +64,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         userRepository.save(userToSave);
         log.info("user registration successfully");
+
         return Response.builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("User Registered Successfully")
