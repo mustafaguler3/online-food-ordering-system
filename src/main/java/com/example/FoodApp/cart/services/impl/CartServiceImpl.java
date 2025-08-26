@@ -151,7 +151,9 @@ public class CartServiceImpl implements CartService {
     @Override
     public Response<CartDTO> getShoppingCart() {
         User user = userService.getCurrentLoggedInUser();
-        Cart cart = cartRepository.findByUser_Id(user.getId()).orElseThrow(() -> new NotFoundException("Cart not found"));
+        Cart cart = cartRepository.findByUser_Id(
+                user.getId())
+                .orElseThrow(() -> new NotFoundException("Cart not found"));
         List<CartItem> cartItems = cart.getCartItems();
         CartDTO cartDTO = modelMapper.map(cart,CartDTO.class);
         // Calculate total amount
@@ -162,7 +164,6 @@ public class CartServiceImpl implements CartService {
             }
         }
         cartDTO.setTotalAmount(totalAmount);
-
         // remove the review from the response
         if (cartDTO.getCartItems() != null) {
             cartDTO.getCartItems().forEach(item -> item.getMenu().setReviews(null));
@@ -170,6 +171,7 @@ public class CartServiceImpl implements CartService {
         return Response.<CartDTO>builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("Shopping cart retrieved successfully")
+                .data(cartDTO)
                 .build();
     }
 

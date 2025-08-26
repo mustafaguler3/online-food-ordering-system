@@ -1,6 +1,8 @@
 package com.example.FoodApp.review.dtos;
 
 import com.example.FoodApp.auth_users.entity.User;
+import com.example.FoodApp.order.dtos.OrderDTO;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.Column;
@@ -29,6 +31,8 @@ public class ReviewDTO {
     private Integer rating;
     @Size(max = 500,message = "Comment cannot exceed 500 characters")
     private String comment;
+    @JsonIgnore
+    private OrderDTO orderDTO;
     private LocalDateTime createdAt;
 
 }

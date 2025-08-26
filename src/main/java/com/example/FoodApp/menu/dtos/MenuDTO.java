@@ -2,6 +2,7 @@ package com.example.FoodApp.menu.dtos;
 
 import com.example.FoodApp.category.entity.Category;
 import com.example.FoodApp.review.dtos.ReviewDTO;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.CascadeType;
@@ -21,6 +22,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MenuDTO {
+
     private long id;
     @NotBlank(message = "Name is required")
     private String name;
@@ -32,8 +34,8 @@ public class MenuDTO {
     @NotNull(message = "Category ID is required")
     private long categoryId;
     private MultipartFile imageFile; // for uploading the image
-
     private List<ReviewDTO> reviews;
+
 }
 
 

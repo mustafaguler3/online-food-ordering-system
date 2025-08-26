@@ -20,7 +20,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/checkout")
-    @PreAuthorize("hasAuthority('CUSTOMER')")
+    @PreAuthorize("hasAuthority('ROLE_CUSTOMER')")
     public ResponseEntity<Response<?>> checkout(){
         return ResponseEntity.ok(orderService.placeOrderFromCart());
     }

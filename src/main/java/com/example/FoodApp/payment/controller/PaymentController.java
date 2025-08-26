@@ -19,7 +19,7 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/pay")
-    public ResponseEntity<Response<?>> initializePayment(@RequestBody @Valid PaymentDTO paymentDTO) {
+    public ResponseEntity<Response<?>> initializePayment(@Valid @RequestBody PaymentDTO paymentDTO) {
         return ResponseEntity.ok(paymentService.initializePayment(paymentDTO));
     }
 

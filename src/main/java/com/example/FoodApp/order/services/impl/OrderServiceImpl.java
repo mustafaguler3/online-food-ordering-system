@@ -6,6 +6,7 @@ import com.example.FoodApp.cart.entity.Cart;
 import com.example.FoodApp.cart.entity.CartItem;
 import com.example.FoodApp.cart.repository.CartRepository;
 import com.example.FoodApp.cart.services.CartService;
+import com.example.FoodApp.config.DtoConverter;
 import com.example.FoodApp.email_notification.dtos.NotificationDTO;
 import com.example.FoodApp.email_notification.services.NotificationService;
 import com.example.FoodApp.enums.OrderStatus;
@@ -54,37 +55,41 @@ public class OrderServiceImpl implements OrderService {
     private final TemplateEngine templateEngine;
     private final CartService cartService;
     private final CartRepository cartRepository;
+    private final DtoConverter dtoConverter;
 
-    //@Value("${base.payment.link}")
+    @Value("${base.payment.link}")
     private String basePaymentLink;
 
     @Override
     public Response<?> placeOrderFromCart() {
         User customer = userService.getCurrentLoggedInUser();
         String deliveryAddress = customer.getAddress();
+
         if (deliveryAddress == null) {
             throw new NotFoundException("Delivery Address not present for the user");
         }
+
         Cart cart = cartRepository.findByUser_Id(customer.getId())
                 .orElseThrow(() -> new NotFoundException("Cart not found for the user"));
 
         List<CartItem> cartItems = cart.getCartItems();
-
         if (cartItems == null || cartItems.isEmpty()) throw new BadRequestException("Cart is empty");
 
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
 
-        for (CartItem cartItem: cartItems) {
+        for (CartItem cartItem : cartItems) {
             OrderItem orderItem = OrderItem.builder()
                     .menu(cartItem.getMenu())
                     .quantity(cartItem.getQuantity())
                     .pricePerUnit(cartItem.getPricePerUnit())
                     .subtotal(cartItem.getSubtotal())
                     .build();
+
             orderItems.add(orderItem);
             totalAmount = totalAmount.add(orderItem.getSubtotal());
         }
+
         Order order = Order.builder()
                 .user(customer)
                 .orderItems(orderItems)
@@ -93,18 +98,19 @@ public class OrderServiceImpl implements OrderService {
                 .orderStatus(OrderStatus.INITIALIZED)
                 .paymentStatus(PaymentStatus.PENDING)
                 .build();
+
         Order savedOrder = orderRepository.save(order);
 
         orderItems.forEach(orderItem -> orderItem.setOrder(savedOrder));
         orderItemRepository.saveAll(orderItems);
 
-        // clear the user's cart after order is placed
+        // clear cart
         cartService.clearShoppingCart();
 
-        OrderDTO orderDTO = modelMapper.map(savedOrder,OrderDTO.class);
+        OrderDTO orderDTO = dtoConverter.toOrderDto(savedOrder);
 
         //send email
-        sendOrderConfirmationEmail(customer,orderDTO);
+        sendOrderConfirmationEmail(customer, orderDTO);
 
         return Response.builder()
                 .statusCode(HttpStatus.OK.value())

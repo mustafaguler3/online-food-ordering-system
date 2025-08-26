@@ -5,11 +5,9 @@ import com.example.FoodApp.order.entity.Order;
 import com.example.FoodApp.payment.entity.Payment;
 import com.example.FoodApp.review.entity.Review;
 import com.example.FoodApp.role.entity.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,6 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Table(name = "users")
+@EqualsAndHashCode(exclude = "carts")
 public class User {
 
     @Id
@@ -42,13 +41,10 @@ public class User {
     private List<Order> orders;
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
     private List<Review> reviews;
-
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
     private List<Payment> payments;
-
     @OneToOne(mappedBy = "user",cascade = CascadeType.ALL)
     private Cart cart;
-
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -2,6 +2,7 @@ package com.example.FoodApp.review.services.impl;
 
 import com.example.FoodApp.auth_users.entity.User;
 import com.example.FoodApp.auth_users.services.UserService;
+import com.example.FoodApp.config.DtoConverter;
 import com.example.FoodApp.enums.OrderStatus;
 import com.example.FoodApp.exceptions.BadRequestException;
 import com.example.FoodApp.exceptions.NotFoundException;
@@ -35,6 +36,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final OrderItemRepository orderItemRepository;
     private final ModelMapper modelMapper;
     private final UserService userService;
+    private final DtoConverter dtoConverter;
 
     @Override
     public Response<ReviewDTO> createReview(ReviewDTO reviewDTO) {
@@ -71,7 +73,7 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = Review.builder()
                 .user(user)
                 .menu(menu)
-                .orderId(reviewDTO.getOrderId())
+                .order(order)
                 .rating(reviewDTO.getRating())
                 .comment(reviewDTO.getComment())
                 .createdAt(LocalDateTime.now())

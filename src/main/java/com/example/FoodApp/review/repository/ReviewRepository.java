@@ -15,7 +15,7 @@ public interface ReviewRepository extends JpaRepository<Review,Long> {
 
     @Query("select case when count(r) > 0 then true else false end " +
             "from Review r " +
-            "where r.user.id = :userId AND r.menu.id = :menuId AND r.orderId = :orderId")
+            "where r.user.id = :userId AND r.menu.id = :menuId AND r.order.id = :orderId")
     boolean existsByUserIdAndMenuIdAndOrderId(@Param("userId") long userId,
                                               @Param("menuId") long menuId,
                                               @Param("orderId") long orderId);
