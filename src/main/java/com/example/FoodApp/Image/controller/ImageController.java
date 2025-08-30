@@ -22,13 +22,13 @@ public class ImageController {
     @PostMapping("/upload")
     public String uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
         if (!Files.exists(root)) {
-            Files.createDirectories(root); // klasör yoksa oluştur
+            Files.createDirectories(root);
         }
         String filename = file.getOriginalFilename();
         Path filePath = root.resolve(filename);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        return "/images/" + filename; // frontend’de kullanacağın URL
+        return "/images/" + filename;
     }
     @GetMapping("/{filename}")
     public ResponseEntity<?> getImage(@PathVariable String filename) throws MalformedURLException {
