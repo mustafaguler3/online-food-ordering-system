@@ -35,6 +35,8 @@ public class ReviewDTO {
     private OrderDTO orderDTO;
     private LocalDateTime createdAt;
 
+    private double averageRating;
+    private double ratingPercentages;
 }
 
 

@@ -16,4 +16,10 @@ public interface OrderService {
     Response<OrderItemDTO> getOrderItemById(Long orderItemId);
     Response<OrderDTO> updateOrderStatus(OrderDTO orderDTO);
     Response<Long> countUniqueCustomers();
+    Response<?> autoAssignDeliveryPerson(Long orderId);
+    Response<?> manuelAssignDeliveryPerson(Long orderId,Long deliveryId);
+    Response<List<OrderDTO>> getAssignedOrders();
+    Response<OrderDTO> updateOrderStatus(Long orderId,String status);
+
+    Response<List<OrderDTO>> findDeliveredOrders();
 }

@@ -11,6 +11,7 @@ import com.example.FoodApp.menu.repository.MenuRepository;
 import com.example.FoodApp.menu.services.MenuService;
 import com.example.FoodApp.response.Response;
 import com.example.FoodApp.review.dtos.ReviewDTO;
+import com.example.FoodApp.review.entity.Review;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -117,15 +118,34 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public Response<?> getMenuById(Long id) {
         log.info("Inside getMenuById()");
-
         Menu existingMenu = menuRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Menu not found"));
 
         MenuDTO menuDTO = modelMapper.map(existingMenu,MenuDTO.class);
 
+
         if (menuDTO.getReviews() != null) {
             menuDTO.getReviews().sort(Comparator.comparing(ReviewDTO::getId).reversed());
         }
+
+        // rating yüzdeleri
+        int[] ratingCounts = new int[5];
+        for (ReviewDTO review : menuDTO.getReviews()) {
+            ratingCounts[review.getRating() - 1]++;
+        }
+        double[] ratingPercentages = new double[5];
+        int totalReviews = menuDTO.getReviews().size();
+        for (int i = 0; i < ratingCounts.length; i++) {
+            ratingPercentages[i] = totalReviews == 0 ? 0 : (double) ratingCounts[i] / totalReviews * 100;
+        }
+
+        double averageRating = menuDTO.getReviews().stream()
+                .mapToInt(ReviewDTO::getRating)
+                .average()
+                .orElse(0.0);
+
+        menuDTO.setAverageRating(averageRating);
+        menuDTO.setRatingPercentages(ratingPercentages);
 
         return Response.builder()
                 .statusCode(HttpStatus.OK.value())
@@ -156,13 +176,37 @@ public class MenuServiceImpl implements MenuService {
     }
     @Override
     public Response<List<MenuDTO>> getMenus(Long categoryId, String search) {
-        Specification<Menu> spec = buildSpecification(categoryId,search);
+        Specification<Menu> spec = buildSpecification(categoryId, search);
+        Sort sort = Sort.by(Sort.Direction.DESC, "id");
 
-        Sort sort = Sort.by(Sort.Direction.DESC,"id");
+        List<Menu> menuList = menuRepository.findAll(spec, sort);
 
-        List<Menu> menuList = menuRepository.findAll(spec,sort);
+        List<MenuDTO> menuDTOS = menuList.stream().map(menu -> {
+            MenuDTO dto = modelMapper.map(menu, MenuDTO.class);
 
-        List<MenuDTO> menuDTOS = menuList.stream().map(menu -> modelMapper.map(menu,MenuDTO.class)).toList();
+            // Review'leri çek
+            List<Review> reviews = menu.getReviews();
+
+            // Ortalama rating
+            double averageRating = reviews.isEmpty() ? 0.0 :
+                    reviews.stream().mapToInt(Review::getRating).average().orElse(0.0);
+            dto.setAverageRating(averageRating);
+
+            // Yüzdelik dağılım (1-5 yıldız)
+            int[] ratingCounts = new int[5];
+            for (Review review : reviews) {
+                ratingCounts[review.getRating() - 1]++;
+            }
+            double[] ratingPercentages = new double[5];
+            for (int i = 0; i < 5; i++) {
+                ratingPercentages[i] = reviews.isEmpty()
+                        ? 0
+                        : (double) ratingCounts[i] / reviews.size() * 100;
+            }
+            dto.setRatingPercentages(ratingPercentages);
+
+            return dto;
+        }).toList();
 
         return Response.<List<MenuDTO>>builder()
                 .statusCode(HttpStatus.OK.value())

@@ -1,6 +1,7 @@
 package com.example.FoodApp.menu.dtos;
 
 import com.example.FoodApp.category.entity.Category;
+import com.example.FoodApp.restaurant.dto.RestaurantDTO;
 import com.example.FoodApp.review.dtos.ReviewDTO;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -30,10 +31,13 @@ public class MenuDTO {
     @NotNull(message = "Price is required")
     @Positive(message = "Price must be positive")
     private BigDecimal price;
+    private long restaurantId;
     private String imageUrl;
     @NotNull(message = "Category ID is required")
     private long categoryId;
     private MultipartFile imageFile; // for uploading the image
+    private double averageRating;
+    private double[] ratingPercentages;
     private List<ReviewDTO> reviews;
 
 }

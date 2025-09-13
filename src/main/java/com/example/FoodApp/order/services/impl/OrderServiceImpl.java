@@ -1,12 +1,17 @@
 package com.example.FoodApp.order.services.impl;
 
 import com.example.FoodApp.auth_users.entity.User;
+import com.example.FoodApp.auth_users.repository.UserRepository;
 import com.example.FoodApp.auth_users.services.UserService;
 import com.example.FoodApp.cart.entity.Cart;
 import com.example.FoodApp.cart.entity.CartItem;
+import com.example.FoodApp.cart.repository.CartItemRepository;
 import com.example.FoodApp.cart.repository.CartRepository;
 import com.example.FoodApp.cart.services.CartService;
 import com.example.FoodApp.config.DtoConverter;
+import com.example.FoodApp.delivery.dto.DeliveryPersonDTO;
+import com.example.FoodApp.delivery.entity.DeliveryPerson;
+import com.example.FoodApp.delivery.repository.DeliveryPersonRepository;
 import com.example.FoodApp.email_notification.dtos.NotificationDTO;
 import com.example.FoodApp.email_notification.services.NotificationService;
 import com.example.FoodApp.enums.OrderStatus;
@@ -22,8 +27,10 @@ import com.example.FoodApp.order.repository.OrderItemRepository;
 import com.example.FoodApp.order.repository.OrderRepository;
 import com.example.FoodApp.order.services.OrderService;
 import com.example.FoodApp.response.Response;
+import com.example.FoodApp.security.AuthUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -31,6 +38,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -38,9 +47,7 @@ import org.thymeleaf.context.Context;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Year;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -54,68 +61,90 @@ public class OrderServiceImpl implements OrderService {
     private final ModelMapper modelMapper;
     private final TemplateEngine templateEngine;
     private final CartService cartService;
+    private final CartItemRepository cartItemRepository;
     private final CartRepository cartRepository;
     private final DtoConverter dtoConverter;
+    private final UserRepository userRepository;
+    private final DeliveryPersonRepository deliveryPersonRepository;
 
     @Value("${base.payment.link}")
     private String basePaymentLink;
 
     @Override
     public Response<?> placeOrderFromCart() {
-        User customer = userService.getCurrentLoggedInUser();
-        String deliveryAddress = customer.getAddress();
 
-        if (deliveryAddress == null) {
-            throw new NotFoundException("Delivery Address not present for the user");
-        }
+        try {
+            User customer = userService.getCurrentLoggedInUser();
+            String deliveryAddress = customer.getAddress();
 
-        Cart cart = cartRepository.findByUser_Id(customer.getId())
-                .orElseThrow(() -> new NotFoundException("Cart not found for the user"));
+            if (deliveryAddress == null) {
+                throw new NotFoundException("Delivery Address not present for the user");
+            }
 
-        List<CartItem> cartItems = cart.getCartItems();
-        if (cartItems == null || cartItems.isEmpty()) throw new BadRequestException("Cart is empty");
+            Cart cart = cartRepository.findByUser_Id(customer.getId())
+                    .orElseThrow(() -> new NotFoundException("Cart not found for the user"));
 
-        List<OrderItem> orderItems = new ArrayList<>();
-        BigDecimal totalAmount = BigDecimal.ZERO;
+            List<CartItem> cartItems = cart.getCartItems();
 
-        for (CartItem cartItem : cartItems) {
-            OrderItem orderItem = OrderItem.builder()
-                    .menu(cartItem.getMenu())
-                    .quantity(cartItem.getQuantity())
-                    .pricePerUnit(cartItem.getPricePerUnit())
-                    .subtotal(cartItem.getSubtotal())
+            if (cartItems == null || cartItems.isEmpty()) throw new BadRequestException("Cart is empty");
+
+            List<OrderItem> orderItems = new ArrayList<>();
+            BigDecimal totalAmount = BigDecimal.ZERO;
+
+            for (CartItem cartItem : cartItems) {
+                OrderItem orderItem = OrderItem.builder()
+                        .menu(cartItem.getMenu())
+                        .restaurant(cartItem.getMenu().getRestaurant())
+                        .quantity(cartItem.getQuantity())
+                        .pricePerUnit(cartItem.getPricePerUnit())
+                        .subtotal(cartItem.getSubtotal())
+                        .build();
+
+                orderItems.add(orderItem);
+                totalAmount = totalAmount.add(orderItem.getSubtotal());
+            }
+
+            String orderCode = UUID.randomUUID().toString();
+            Order order = Order.builder()
+                    .user(customer)
+                    .orderItems(orderItems)
+                    .orderCode(orderCode.substring(0,6))
+                    .orderDate(LocalDateTime.now())
+                    .totalAmount(totalAmount)
+                    .orderStatus(OrderStatus.INITIALIZED)
+                    .paymentStatus(PaymentStatus.PENDING)
+                    .restaurant(null)
+                    .deliveryPerson(null)
                     .build();
 
-            orderItems.add(orderItem);
-            totalAmount = totalAmount.add(orderItem.getSubtotal());
+
+            Order savedOrder = orderRepository.save(order);
+
+            orderItems.forEach(orderItem -> orderItem.setOrder(savedOrder));
+            orderItemRepository.saveAll(orderItems);
+
+            // clear cart
+            cartService.clearShoppingCart();
+
+            //OrderDTO orderDTO = dtoConverter.toOrderDto(savedOrder);
+            OrderDTO orderDTO = modelMapper.map(order,OrderDTO.class);
+
+            //autoAssignDeliveryPerson(deliveryPersonId);
+            //send email
+            sendOrderConfirmationEmail(customer, orderDTO);
+
+            return Response.builder()
+                    .statusCode(HttpStatus.OK.value())
+                    .message("Your order has been received! We've sent a secure payment link to your email. Please complete the payment to confirm your order.")
+                    .build();
+
+        }catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
 
-        Order order = Order.builder()
-                .user(customer)
-                .orderItems(orderItems)
-                .orderDate(LocalDateTime.now())
-                .totalAmount(totalAmount)
-                .orderStatus(OrderStatus.INITIALIZED)
-                .paymentStatus(PaymentStatus.PENDING)
-                .build();
 
-        Order savedOrder = orderRepository.save(order);
 
-        orderItems.forEach(orderItem -> orderItem.setOrder(savedOrder));
-        orderItemRepository.saveAll(orderItems);
-
-        // clear cart
-        cartService.clearShoppingCart();
-
-        OrderDTO orderDTO = dtoConverter.toOrderDto(savedOrder);
-
-        //send email
-        sendOrderConfirmationEmail(customer, orderDTO);
-
-        return Response.builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Your order has been received! We've sent a secure payment link to your email. Please complete the payment to confirm your order.")
-                .build();
     }
 
     private void sendOrderConfirmationEmail(User customer, OrderDTO orderDTO) {
@@ -188,7 +217,8 @@ public class OrderServiceImpl implements OrderService {
 
         Page<OrderDTO> orderDTOPage = orderPage.map(order -> {
             OrderDTO dto = modelMapper.map(order,OrderDTO.class);
-            dto.getOrderItems().forEach(orderItemDTO -> orderItemDTO.getMenu().setReviews(null));
+            dto.getOrderItems()
+                    .forEach(orderItemDTO -> orderItemDTO.getMenu().setReviews(null));
             return dto;
         });
 
@@ -263,6 +293,150 @@ public class OrderServiceImpl implements OrderService {
                 .data(uniqueCustomerCount)
                 .build();
     }
+
+    @Override
+    public Response<?> autoAssignDeliveryPerson(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getDeliveryPerson() != null) {
+            return Response.builder()
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .message("Delivery person already assigned")
+                    .build();
+        }
+
+        List<DeliveryPerson> availableDeliveries = deliveryPersonRepository.findByHasActiveOrderFalse();
+        if (availableDeliveries.isEmpty()) {
+            return Response.builder()
+                    .statusCode(HttpStatus.SERVICE_UNAVAILABLE.value())
+                    .message("No available deliveries right now")
+                    .build();
+        }
+
+        // rastgele bir delivery seç
+        DeliveryPerson selected =
+                availableDeliveries.get(new Random().nextInt(availableDeliveries.size()));
+
+        // atama
+        order.setDeliveryPerson(selected);
+        order.setOrderStatus(OrderStatus.ASSIGNED);
+        orderRepository.save(order);
+
+        // kurye artık aktif siparişe sahip oldu
+        selected.setHasActiveOrder(true);
+        deliveryPersonRepository.save(selected);
+
+        return Response.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("Order auto-assigned to delivery person: " + selected.getUser().getName())
+                .build();
+    }
+
+    @Override
+    public Response<?> manuelAssignDeliveryPerson(Long orderId, Long deliveryId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getDeliveryPerson() != null) {
+            return Response.builder()
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .message("Delivery person already assigned")
+                    .build();
+        }
+
+        DeliveryPerson deliveryPerson = deliveryPersonRepository.findById(deliveryId)
+                .orElseThrow(() -> new RuntimeException("Delivery person not found"));
+
+        if (deliveryPerson.isHasActiveOrder()) {
+            return Response.builder()
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .message("Selected delivery person already has an active order")
+                    .build();
+        }
+
+        // atama
+        order.setDeliveryPerson(deliveryPerson);
+        order.setOrderStatus(OrderStatus.ASSIGNED);
+        orderRepository.save(order);
+
+        // kurye artık aktif siparişe sahip oldu
+        deliveryPerson.setHasActiveOrder(true);
+        deliveryPersonRepository.save(deliveryPerson);
+
+        if (OrderStatus.DELIVERED.toString() == "DELIVERED") {
+            deliveryPerson.setHasActiveOrder(false);
+        }
+
+        return Response.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("Order manually assigned to delivery person: " + deliveryPerson.getUser().getName())
+                .build();
+    }
+
+    @Override
+    public Response<List<OrderDTO>> getAssignedOrders() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+        List<Order> orders = orderRepository.findByDeliveryPerson_Id(currentUser.getUser().getDeliveryPerson().getId());
+        
+        List<OrderDTO> orderDTOS =
+                orders.stream().map(order -> modelMapper.map(order,OrderDTO.class))
+                .toList();
+
+        return Response.<List<OrderDTO>>builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("All orders assigned")
+                .data(orderDTOS)
+                .build();
+    }
+
+
+    @Override
+    public Response<OrderDTO> updateOrderStatus(Long orderId,String status) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (!order.getDeliveryPerson().getId().equals(currentUser.getUser().getDeliveryPerson().getId())) {
+            throw new RuntimeException("Not authorized for this order");
+        }
+        order.setOrderStatus(OrderStatus.valueOf(status));
+
+        if (order.getOrderStatus() == OrderStatus.DELIVERED) {
+            order.setPaymentStatus(PaymentStatus.COMPLETED);
+        }
+        order.setOrderDate(LocalDateTime.now());
+        orderRepository.save(order);
+
+        OrderDTO orderDTO = modelMapper.map(order,OrderDTO.class);
+
+        return Response.<OrderDTO>builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("Your order is on the way")
+                .data(orderDTO)
+                .build();
+    }
+
+    @Override
+    public Response<List<OrderDTO>> findDeliveredOrders() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        AuthUser authUser = (AuthUser) authentication.getPrincipal();
+
+        List<Order> orders =
+                orderRepository.findDeliveredOrdersByOrderStatusAndUserId(authUser.getUser().getDeliveryPerson().getId(), OrderStatus.DELIVERED);
+
+        List<OrderDTO> orderDTOS = orders.stream().map(order -> modelMapper.map(order,OrderDTO.class))
+                .toList();
+
+        return Response.<List<OrderDTO>>builder()
+                .statusCode(HttpStatus.OK.value())
+                .data(orderDTOS)
+                .build();
+    }
+
 }
 
 

@@ -1,5 +1,6 @@
 package com.example.FoodApp.payment.controller;
 
+import com.example.FoodApp.exceptions.BadRequestException;
 import com.example.FoodApp.payment.dtos.PaymentDTO;
 import com.example.FoodApp.payment.service.PaymentService;
 import com.example.FoodApp.response.Response;
@@ -7,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +21,17 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/pay")
-    public ResponseEntity<Response<?>> initializePayment(@Valid @RequestBody PaymentDTO paymentDTO) {
+    public ResponseEntity<Response<?>> initializePayment(@Valid @RequestBody PaymentDTO paymentDTO,
+                                                         BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getFieldErrors()
+                    .stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .findFirst()
+                    .orElse("Invalid input");
+            throw new BadRequestException(errorMessage);
+        }
+
         return ResponseEntity.ok(paymentService.initializePayment(paymentDTO));
     }
 
@@ -35,7 +47,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{paymentId}")
-    public ResponseEntity<Response<PaymentDTO>> getPaymentById(@PathVariable Long paymentId) {
+    public ResponseEntity<Response<PaymentDTO>> getPaymentById(@PathVariable("paymentId") Long paymentId) {
         return ResponseEntity.ok(paymentService.getPaymentById(paymentId));
     }
 

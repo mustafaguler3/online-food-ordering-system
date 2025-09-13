@@ -8,10 +8,12 @@ import java.math.BigDecimal;
 
 @Entity
 @Data
+@Table(name = "cart_item")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class CartItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

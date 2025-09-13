@@ -2,6 +2,8 @@ package com.example.FoodApp.order.dtos;
 
 import com.example.FoodApp.auth_users.dtos.UserDTO;
 import com.example.FoodApp.auth_users.entity.User;
+import com.example.FoodApp.delivery.dto.DeliveryPersonDTO;
+import com.example.FoodApp.delivery.entity.DeliveryPerson;
 import com.example.FoodApp.enums.OrderStatus;
 import com.example.FoodApp.enums.PaymentStatus;
 import com.example.FoodApp.order.entity.OrderItem;
@@ -20,13 +22,16 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OrderDTO {
 
-    private long id;
+    private Long id;
     private LocalDateTime orderDate;
+    private String deliveryPersonName;
+    private DeliveryPersonDTO deliveryPerson;
+    private Long menuId;
+    private String orderCode;
     private BigDecimal totalAmount;
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;
     private UserDTO user;
-    @JsonIgnore
     private List<OrderItemDTO> orderItems;
 
 }

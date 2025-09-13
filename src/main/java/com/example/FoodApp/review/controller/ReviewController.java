@@ -30,8 +30,8 @@ public class ReviewController {
     }
 
     @GetMapping("/menu-item/average/{menuId}")
-    public ResponseEntity<Response<Double>> getAverageRating(@PathVariable Long menuId) {
-        return ResponseEntity.ok(reviewService.getAverageRating(menuId));
+    public double getAverageRating(@PathVariable Long menuId) {
+        return reviewService.getAverageRating(menuId);
     }
 }
 

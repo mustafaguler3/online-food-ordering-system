@@ -9,9 +9,10 @@ import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review,Long> {
     List<Review> findByMenuIdOrderByIdDesc(Long menuId);
-
     @Query("select avg(r.rating) from Review r where r.menu.id = :menuId")
     Double calculateAverageRatingByMenuId(@Param("menuId") long menuId);
+
+    List<Review> findByMenuId(long menuId);
 
     @Query("select case when count(r) > 0 then true else false end " +
             "from Review r " +

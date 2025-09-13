@@ -62,6 +62,7 @@ public class AuthServiceImpl implements AuthService {
                 .isActive(true)
                 .createdAt(LocalDateTime.now())
                 .build();
+
         userRepository.save(userToSave);
         log.info("user registration successfully");
 

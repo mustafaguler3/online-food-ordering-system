@@ -8,6 +8,7 @@ import com.example.FoodApp.cart.entity.CartItem;
 import com.example.FoodApp.cart.repository.CartItemRepository;
 import com.example.FoodApp.cart.repository.CartRepository;
 import com.example.FoodApp.cart.services.CartService;
+import com.example.FoodApp.config.DtoConverter;
 import com.example.FoodApp.exceptions.NotFoundException;
 import com.example.FoodApp.menu.entity.Menu;
 import com.example.FoodApp.menu.repository.MenuRepository;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +37,7 @@ public class CartServiceImpl implements CartService {
     private final MenuRepository menuRepository;
     private final UserService userService;
     private final ModelMapper modelMapper;
+    private final DtoConverter dtoConverter;
 
     @Override
     public Response<?> addItemToCart(CartDTO cartDTO) {
@@ -151,12 +154,25 @@ public class CartServiceImpl implements CartService {
     @Override
     public Response<CartDTO> getShoppingCart() {
         User user = userService.getCurrentLoggedInUser();
-        Cart cart = cartRepository.findByUser_Id(
-                user.getId())
+
+        if(user.getRoles().contains("ADMIN") || user.getRoles().contains("DELIVERY")) {
+            CartDTO emptyCart = new CartDTO();
+            emptyCart.setCartItems(Collections.emptyList());
+            emptyCart.setTotalAmount(BigDecimal.ZERO);
+
+            return Response.<CartDTO>builder()
+                    .statusCode(HttpStatus.OK.value())
+                    .message("No cart for this user")
+                    .data(emptyCart)
+                    .build();
+        }
+
+        Cart cart = cartRepository.findByUser_Id(user.getId())
                 .orElseThrow(() -> new NotFoundException("Cart not found"));
+
         List<CartItem> cartItems = cart.getCartItems();
-        CartDTO cartDTO = modelMapper.map(cart,CartDTO.class);
-        // Calculate total amount
+        CartDTO cartDTO = dtoConverter.toCartDto(cart);
+
         BigDecimal totalAmount = BigDecimal.ZERO;
         if (cartItems != null) {
             for (CartItem item : cartItems) {
@@ -164,10 +180,12 @@ public class CartServiceImpl implements CartService {
             }
         }
         cartDTO.setTotalAmount(totalAmount);
-        // remove the review from the response
+
+        // remove reviews
         if (cartDTO.getCartItems() != null) {
             cartDTO.getCartItems().forEach(item -> item.getMenu().setReviews(null));
         }
+
         return Response.<CartDTO>builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("Shopping cart retrieved successfully")

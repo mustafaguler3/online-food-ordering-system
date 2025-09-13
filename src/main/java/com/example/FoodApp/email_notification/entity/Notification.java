@@ -3,15 +3,13 @@ package com.example.FoodApp.email_notification.entity;
 import com.example.FoodApp.enums.NotificationType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "notifications")
 @Builder
 @AllArgsConstructor

@@ -10,6 +10,8 @@ import com.example.FoodApp.email_notification.services.NotificationService;
 import com.example.FoodApp.exceptions.BadRequestException;
 import com.example.FoodApp.exceptions.NotFoundException;
 import com.example.FoodApp.response.Response;
+import com.example.FoodApp.role.dtos.RoleDTO;
+import com.example.FoodApp.role.entity.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -21,9 +23,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,41 +77,52 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Response<?> updateOwnAccount(UserDTO userDTO) {
+    public Response<?> updateOwnAccount(UserDTO userDTO,MultipartFile imageFile) throws IOException {
         User user = getCurrentLoggedInUser();
-        String profileUrl = user.getProfileUrl();
-        MultipartFile imageFile = userDTO.getImageFile();
 
         if (imageFile != null && !imageFile.isEmpty()) {
-            if (profileUrl != null && !profileUrl.isEmpty()) {
-                String keyName = profileUrl.substring(profileUrl.lastIndexOf("/") + 1);
-                //awss3Service.deleteFile("profile/" + keyName);
-                log.info("Deleted old profile image from s3");
-            }
-            String imageName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
-            //URL newImageUrl = awss3Service.uploadFile("profile/"+imageName,imageFile);
-            //user.setProfileUrl(newImageUrl.toString());
+            String uploadDir = Paths.get(System.getProperty("user.dir"), "uploads", "profile").toString();
+            Files.createDirectories(Paths.get(uploadDir));
+
+            String imageName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
+            Path path = Paths.get(uploadDir, imageName);
+            imageFile.transferTo(path.toFile());
+            user.setProfileUrl("/uploads/profile/" + imageName);
         }
 
-        // update user details
         if (userDTO.getName() != null) user.setName(userDTO.getName());
+        if (userDTO.getEmail() != null) user.setEmail(userDTO.getEmail());
         if (userDTO.getPhoneNumber() != null) user.setPhoneNumber(userDTO.getPhoneNumber());
         if (userDTO.getAddress() != null) user.setAddress(userDTO.getAddress());
-        if (userDTO.getPassword() != null) user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
-        if (userDTO.getEmail() != null && !userDTO.getEmail().equals(user.getEmail())) {
-            if (userRepository.existsByEmail(userDTO.getEmail())) {
-                throw new BadRequestException("Email already exists");
-            }
-            user.setEmail(userDTO.getEmail());
-        }
-        user.setEmail(userDTO.getEmail());
+        User updatedUser = userRepository.save(user);
 
-        userRepository.save(user);
+        UserDTO responseDto = new UserDTO();
+        responseDto.setId(updatedUser.getId());
+        responseDto.setName(updatedUser.getName());
+        responseDto.setEmail(updatedUser.getEmail());
+        responseDto.setPhoneNumber(updatedUser.getPhoneNumber());
+        responseDto.setAddress(updatedUser.getAddress());
+        responseDto.setProfileUrl(updatedUser.getProfileUrl());
 
-        return Response.builder()
+        List<RoleDTO> rolesDto = updatedUser.getRoles() != null
+                ? updatedUser.getRoles().stream()
+                .map(role -> {
+                    RoleDTO dto = new RoleDTO();
+                    dto.setId(role.getId());
+                    dto.setName(role.getName());
+                    return dto;
+                })
+                .collect(Collectors.toList())
+                : Collections.emptyList();
+
+        responseDto.setRoles(rolesDto);
+        responseDto.setActive(updatedUser.isActive());
+
+        return Response.<UserDTO>builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("Account updated successfully")
+                .data(responseDto)
                 .build();
     }
     @Override
@@ -121,6 +141,22 @@ public class UserServiceImpl implements UserService {
         return Response.builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("Account deactivated successfully")
+                .build();
+    }
+
+    @Override
+    public Response<List<UserDTO>> findUsersByRoleDeliveries() {
+        List<User> users = userRepository.findByRoles_Name("DELIVERY");
+
+        if (users.isEmpty()) {
+            throw new RuntimeException("Not Found Delivery");
+        }
+
+        List<UserDTO> userDTOS = users.stream().map(delivery -> modelMapper.map(delivery,UserDTO.class))
+                .toList();
+        return Response.<List<UserDTO>>builder()
+                .statusCode(HttpStatus.OK.value())
+                .data(userDTOS)
                 .build();
     }
 }

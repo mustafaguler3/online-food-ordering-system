@@ -2,18 +2,17 @@ package com.example.FoodApp.menu.entity;
 
 import com.example.FoodApp.category.entity.Category;
 import com.example.FoodApp.order.entity.OrderItem;
+import com.example.FoodApp.restaurant.entity.Restaurant;
 import com.example.FoodApp.review.entity.Review;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "menus")
 @Builder
 @AllArgsConstructor
@@ -35,6 +34,9 @@ public class Menu {
     @OneToMany(mappedBy = "menu")
     private List<Review> reviews;
 
+    @ManyToOne
+    @JoinColumn(name = "restaurant_id")
+    private Restaurant restaurant;
 }
 
 

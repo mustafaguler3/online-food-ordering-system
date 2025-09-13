@@ -108,13 +108,15 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public Response<Double> getAverageRating(Long menuId) {
-        Double averageRating = reviewRepository.calculateAverageRatingByMenuId(menuId);
+    public double getAverageRating(Long menuId) {
+        //Double averageRating = reviewRepository.calculateAverageRatingByMenuId(menuId);
+        List<Review> reviews = reviewRepository.findByMenuId(menuId);
 
-        return Response.<Double>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Average rating retrieved successfully")
-                .data(averageRating != null ? averageRating : 0.0)
-                .build();
+        List<ReviewDTO> reviewDTOS =
+                reviews.stream().map(review -> dtoConverter.toReviewDto(review)).toList();
+
+        return reviewDTOS.stream()
+                .mapToInt(ReviewDTO::getRating)
+                .average().orElse(0.0);
     }
 }

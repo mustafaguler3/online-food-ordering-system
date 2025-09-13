@@ -7,6 +7,7 @@ import com.example.FoodApp.enums.PaymentGateway;
 import com.example.FoodApp.enums.PaymentStatus;
 import com.example.FoodApp.exceptions.BadRequestException;
 import com.example.FoodApp.exceptions.NotFoundException;
+import com.example.FoodApp.order.dtos.OrderDTO;
 import com.example.FoodApp.order.entity.Order;
 import com.example.FoodApp.order.repository.OrderRepository;
 import com.example.FoodApp.payment.dtos.PaymentDTO;
@@ -57,10 +58,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Response<?> initializePayment(PaymentDTO paymentDTO) {
+        if (paymentDTO.getOrderId() == null) {
+            throw new BadRequestException("Order information is missing");
+        }
 
-        Stripe.apiKey = this.secretKey;
         Long orderId = paymentDTO.getOrderId();
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new NotFoundException("Order not found"));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+        Stripe.apiKey = this.secretKey;
 
         if (order.getPaymentStatus() == PaymentStatus.COMPLETED) {
             throw new BadRequestException("Payment already made for this order");
@@ -78,7 +83,7 @@ public class PaymentServiceImpl implements PaymentService {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(paymentDTO.getAmount().multiply(BigDecimal.valueOf(100)).longValue())
                     .setCurrency("usd")
-                    .putMetadata("orderId",String.valueOf(orderId))
+                    .putMetadata("orderId",String.valueOf(order.getId()))
                     .build();
 
             PaymentIntent intent = PaymentIntent.create(params);

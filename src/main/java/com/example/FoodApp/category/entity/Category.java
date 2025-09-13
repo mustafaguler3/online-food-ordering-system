@@ -2,15 +2,13 @@ package com.example.FoodApp.category.entity;
 
 import com.example.FoodApp.menu.entity.Menu;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "categories")
 @Builder
 @AllArgsConstructor

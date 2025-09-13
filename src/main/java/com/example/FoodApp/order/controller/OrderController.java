@@ -20,7 +20,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/checkout")
-    @PreAuthorize("hasAuthority('ROLE_CUSTOMER')")
+    @PreAuthorize("hasAuthority('CUSTOMER')")
     public ResponseEntity<Response<?>> checkout(){
         return ResponseEntity.ok(orderService.placeOrderFromCart());
     }
@@ -35,10 +35,14 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrdersOfUser());
     }
 
+
+
     @GetMapping("/order-item/{orderItemId}")
     public ResponseEntity<Response<OrderItemDTO>> getOrderItemById(@PathVariable long orderItemId) {
         return ResponseEntity.ok(orderService.getOrderItemById(orderItemId));
     }
+
+
 
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('ADMIN')")
