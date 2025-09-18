@@ -93,7 +93,6 @@ public class UserServiceImpl implements UserService {
         if (userDTO.getName() != null) user.setName(userDTO.getName());
         if (userDTO.getEmail() != null) user.setEmail(userDTO.getEmail());
         if (userDTO.getPhoneNumber() != null) user.setPhoneNumber(userDTO.getPhoneNumber());
-        if (userDTO.getAddress() != null) user.setAddress(userDTO.getAddress());
 
         User updatedUser = userRepository.save(user);
 
@@ -102,7 +101,6 @@ public class UserServiceImpl implements UserService {
         responseDto.setName(updatedUser.getName());
         responseDto.setEmail(updatedUser.getEmail());
         responseDto.setPhoneNumber(updatedUser.getPhoneNumber());
-        responseDto.setAddress(updatedUser.getAddress());
         responseDto.setProfileUrl(updatedUser.getProfileUrl());
 
         List<RoleDTO> rolesDto = updatedUser.getRoles() != null

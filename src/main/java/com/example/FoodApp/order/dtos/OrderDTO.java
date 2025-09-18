@@ -7,6 +7,8 @@ import com.example.FoodApp.delivery.entity.DeliveryPerson;
 import com.example.FoodApp.enums.OrderStatus;
 import com.example.FoodApp.enums.PaymentStatus;
 import com.example.FoodApp.order.entity.OrderItem;
+import com.example.FoodApp.restaurant.dto.RestaurantDTO;
+import com.example.FoodApp.restaurant.entity.Restaurant;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -24,11 +26,10 @@ public class OrderDTO {
 
     private Long id;
     private LocalDateTime orderDate;
-    private String deliveryPersonName;
     private DeliveryPersonDTO deliveryPerson;
-    private Long menuId;
     private String orderCode;
     private BigDecimal totalAmount;
+    private RestaurantDTO restaurant;
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;
     private UserDTO user;

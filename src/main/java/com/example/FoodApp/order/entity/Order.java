@@ -1,5 +1,6 @@
 package com.example.FoodApp.order.entity;
 
+import com.example.FoodApp.auth_users.entity.Address;
 import com.example.FoodApp.auth_users.entity.User;
 import com.example.FoodApp.delivery.entity.DeliveryPerson;
 import com.example.FoodApp.enums.OrderStatus;
@@ -35,6 +36,10 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
+
+    @ManyToOne
+    @JoinColumn(name = "address_id")
+    private Address deliveryAddress;
 
     @ManyToOne
     @JoinColumn(name = "delivery_person_id")

@@ -1,6 +1,8 @@
 package com.example.FoodApp.order.services.impl;
 
+import com.example.FoodApp.auth_users.entity.Address;
 import com.example.FoodApp.auth_users.entity.User;
+import com.example.FoodApp.auth_users.repository.AddressRepository;
 import com.example.FoodApp.auth_users.repository.UserRepository;
 import com.example.FoodApp.auth_users.services.UserService;
 import com.example.FoodApp.cart.entity.Cart;
@@ -10,7 +12,9 @@ import com.example.FoodApp.cart.repository.CartRepository;
 import com.example.FoodApp.cart.services.CartService;
 import com.example.FoodApp.config.DtoConverter;
 import com.example.FoodApp.delivery.dto.DeliveryPersonDTO;
+import com.example.FoodApp.delivery.entity.DeliveryLocation;
 import com.example.FoodApp.delivery.entity.DeliveryPerson;
+import com.example.FoodApp.delivery.repository.DeliveryLocationRepository;
 import com.example.FoodApp.delivery.repository.DeliveryPersonRepository;
 import com.example.FoodApp.email_notification.dtos.NotificationDTO;
 import com.example.FoodApp.email_notification.services.NotificationService;
@@ -19,6 +23,7 @@ import com.example.FoodApp.enums.PaymentStatus;
 import com.example.FoodApp.exceptions.BadRequestException;
 import com.example.FoodApp.exceptions.NotFoundException;
 import com.example.FoodApp.menu.dtos.MenuDTO;
+import com.example.FoodApp.menu.entity.Menu;
 import com.example.FoodApp.order.dtos.OrderDTO;
 import com.example.FoodApp.order.dtos.OrderItemDTO;
 import com.example.FoodApp.order.entity.Order;
@@ -27,6 +32,7 @@ import com.example.FoodApp.order.repository.OrderItemRepository;
 import com.example.FoodApp.order.repository.OrderRepository;
 import com.example.FoodApp.order.services.OrderService;
 import com.example.FoodApp.response.Response;
+import com.example.FoodApp.restaurant.entity.Restaurant;
 import com.example.FoodApp.security.AuthUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +54,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -66,6 +73,8 @@ public class OrderServiceImpl implements OrderService {
     private final DtoConverter dtoConverter;
     private final UserRepository userRepository;
     private final DeliveryPersonRepository deliveryPersonRepository;
+    private final DeliveryLocationRepository deliveryLocationRepository;
+    private final AddressRepository addressRepository;
 
     @Value("${base.payment.link}")
     private String basePaymentLink;
@@ -75,7 +84,8 @@ public class OrderServiceImpl implements OrderService {
 
         try {
             User customer = userService.getCurrentLoggedInUser();
-            String deliveryAddress = customer.getAddress();
+
+            Address deliveryAddress = addressRepository.findAddressByUserId(customer.getId());
 
             if (deliveryAddress == null) {
                 throw new NotFoundException("Delivery Address not present for the user");
@@ -103,8 +113,14 @@ public class OrderServiceImpl implements OrderService {
                 orderItems.add(orderItem);
                 totalAmount = totalAmount.add(orderItem.getSubtotal());
             }
+            Set<Restaurant> restaurants = cartItems.stream()
+                    .map(ci -> ci.getMenu().getRestaurant())
+                    .collect(Collectors.toSet());
+
+            Restaurant restaurant = restaurants.iterator().next();
 
             String orderCode = UUID.randomUUID().toString();
+
             Order order = Order.builder()
                     .user(customer)
                     .orderItems(orderItems)
@@ -113,7 +129,8 @@ public class OrderServiceImpl implements OrderService {
                     .totalAmount(totalAmount)
                     .orderStatus(OrderStatus.INITIALIZED)
                     .paymentStatus(PaymentStatus.PENDING)
-                    .restaurant(null)
+                    .deliveryAddress(deliveryAddress)
+                    .restaurant(restaurant)
                     .deliveryPerson(null)
                     .build();
 
@@ -142,9 +159,6 @@ public class OrderServiceImpl implements OrderService {
             e.printStackTrace();
             throw e;
         }
-
-
-
     }
 
     private void sendOrderConfirmationEmail(User customer, OrderDTO orderDTO) {
@@ -278,6 +292,37 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderStatus(orderStatus);
         orderRepository.save(order);
 
+        DeliveryPerson dp = order.getDeliveryPerson();
+        Restaurant restaurant = order.getRestaurant();
+
+        if (OrderStatus.ON_THE_WAY.name().equals(orderStatus)) {
+
+            if (dp == null) {
+                throw new RuntimeException("Delivery person not assigned to this order.");
+            }
+
+            if (restaurant == null) {
+                throw new RuntimeException("Restaurant info not found for this order.");
+            }
+
+            DeliveryLocation loc = new DeliveryLocation();
+            loc.setDeliveryPerson(dp);
+            loc.setLatitude(restaurant.getLatitude());
+            loc.setLongitude(restaurant.getLongitude());
+            loc.setTimestamp(LocalDateTime.now());
+
+            deliveryLocationRepository.save(loc);
+
+            dp.setCurrentLat(restaurant.getLatitude());
+            dp.setCurrentLng(restaurant.getLongitude());
+            deliveryPersonRepository.save(dp);
+        }
+
+        if (OrderStatus.DELIVERED.name().equals(orderStatus.name())) {
+            dp.setHasActiveOrder(false);
+            deliveryPersonRepository.save(dp);
+        }
+
         return Response.<OrderDTO>builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("Order status updated successfully")
@@ -314,16 +359,13 @@ public class OrderServiceImpl implements OrderService {
                     .build();
         }
 
-        // rastgele bir delivery seç
         DeliveryPerson selected =
                 availableDeliveries.get(new Random().nextInt(availableDeliveries.size()));
 
-        // atama
         order.setDeliveryPerson(selected);
         order.setOrderStatus(OrderStatus.ASSIGNED);
         orderRepository.save(order);
 
-        // kurye artık aktif siparişe sahip oldu
         selected.setHasActiveOrder(true);
         deliveryPersonRepository.save(selected);
 
@@ -355,18 +397,12 @@ public class OrderServiceImpl implements OrderService {
                     .build();
         }
 
-        // atama
         order.setDeliveryPerson(deliveryPerson);
         order.setOrderStatus(OrderStatus.ASSIGNED);
         orderRepository.save(order);
 
-        // kurye artık aktif siparişe sahip oldu
         deliveryPerson.setHasActiveOrder(true);
         deliveryPersonRepository.save(deliveryPerson);
-
-        if (OrderStatus.DELIVERED.toString() == "DELIVERED") {
-            deliveryPerson.setHasActiveOrder(false);
-        }
 
         return Response.builder()
                 .statusCode(HttpStatus.OK.value())
@@ -396,6 +432,8 @@ public class OrderServiceImpl implements OrderService {
     public Response<OrderDTO> updateOrderStatus(Long orderId,String status) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+        DeliveryPerson deliveryPerson =
+                deliveryPersonRepository.findDeliveryPersonById(currentUser.getUser().getId());
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -407,6 +445,7 @@ public class OrderServiceImpl implements OrderService {
 
         if (order.getOrderStatus() == OrderStatus.DELIVERED) {
             order.setPaymentStatus(PaymentStatus.COMPLETED);
+            deliveryPerson.setHasActiveOrder(false);
         }
         order.setOrderDate(LocalDateTime.now());
         orderRepository.save(order);
@@ -416,6 +455,25 @@ public class OrderServiceImpl implements OrderService {
         return Response.<OrderDTO>builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("Your order is on the way")
+                .data(orderDTO)
+                .build();
+    }
+
+    @Override
+    public Response<OrderDTO> getAssignedOrderById(Long orderId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+
+        Order order = orderRepository.findByIdAndDeliveryPerson_Id(
+                orderId,
+                currentUser.getUser().getDeliveryPerson().getId()
+        ).orElseThrow(() -> new RuntimeException("Order not found or not assigned to this courier"));
+
+        OrderDTO orderDTO = modelMapper.map(order, OrderDTO.class);
+
+        return Response.<OrderDTO>builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("Assigned order fetched")
                 .data(orderDTO)
                 .build();
     }

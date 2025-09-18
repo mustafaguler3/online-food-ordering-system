@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order,Long> {
     Page<Order> findByOrderStatus(OrderStatus orderStatus, Pageable pageable);
@@ -21,4 +22,6 @@ public interface OrderRepository extends JpaRepository<Order,Long> {
     @Query("select o from Order o where o.orderStatus=:status and o.deliveryPerson.id =:id")
     List<Order> findDeliveredOrdersByOrderStatusAndUserId(@Param("id") Long deliveryId,
                                                           @Param("status") OrderStatus orderStatus);
+
+    Optional<Order> findByIdAndDeliveryPerson_Id(Long orderId, Long deliveryPersonId);
 }

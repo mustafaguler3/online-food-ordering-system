@@ -303,7 +303,6 @@ public class DtoConverter {
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setName(user.getName());
-        dto.setAddress(user.getAddress());
         return dto;
     }
 }

@@ -24,14 +24,18 @@ public class RestaurantServiceImpl implements RestaurantService {
     public Response<List<RestaurantDTO>> getAllRestaurants() {
         List<Restaurant> restaurants = restaurantRepository.findAll();
 
-        if (restaurants.isEmpty() || restaurants.size() == 0) {
+        if (restaurants.isEmpty()) {
             return Response.<List<RestaurantDTO>>builder()
                     .statusCode(HttpStatus.NOT_FOUND.value())
                     .message("No restaurant any")
                     .build();
         }
 
-        List<RestaurantDTO> restaurantDTOS = restaurants.stream().map(restaurant ->
+        List<RestaurantDTO>
+                restaurantDTOS =
+                restaurants
+                        .stream()
+                        .map(restaurant ->
                 modelMapper.map(restaurant,RestaurantDTO.class)).toList();
 
         return Response.<List<RestaurantDTO>>builder()

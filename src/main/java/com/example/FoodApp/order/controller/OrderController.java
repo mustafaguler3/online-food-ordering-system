@@ -25,6 +25,7 @@ public class OrderController {
         return ResponseEntity.ok(orderService.placeOrderFromCart());
     }
 
+
     @GetMapping("/{id}")
     public ResponseEntity<Response<OrderDTO>> getOrderById(@PathVariable long id) {
         return ResponseEntity.ok(orderService.getOrderById(id));
@@ -35,18 +36,15 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrdersOfUser());
     }
 
-
-
     @GetMapping("/order-item/{orderItemId}")
     public ResponseEntity<Response<OrderItemDTO>> getOrderItemById(@PathVariable long orderItemId) {
         return ResponseEntity.ok(orderService.getOrderItemById(orderItemId));
     }
 
 
-
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Response<?>> getAllOrders(@RequestParam(required = false)OrderStatus orderStatus,
+    public ResponseEntity<Response<?>> getAllOrders(@RequestParam(required = false) OrderStatus orderStatus,
                                                     @RequestParam(defaultValue = "0") int page,
                                                     @RequestParam(defaultValue = "100") int size){
         return ResponseEntity.ok(orderService.getAllOrders(orderStatus,page,size));
@@ -63,6 +61,7 @@ public class OrderController {
     public ResponseEntity<Response<?>> countUniqueCustomers(){
         return ResponseEntity.ok(orderService.countUniqueCustomers());
     }
+
 }
 
 

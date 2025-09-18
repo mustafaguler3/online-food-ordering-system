@@ -20,6 +20,6 @@ public interface OrderService {
     Response<?> manuelAssignDeliveryPerson(Long orderId,Long deliveryId);
     Response<List<OrderDTO>> getAssignedOrders();
     Response<OrderDTO> updateOrderStatus(Long orderId,String status);
-
+    Response<OrderDTO> getAssignedOrderById(Long orderId);
     Response<List<OrderDTO>> findDeliveredOrders();
 }

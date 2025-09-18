@@ -33,8 +33,10 @@ public class User {
     private String password;
     private String phoneNumber;
     private String profileUrl;
-    private String address;
     private boolean isActive;
+
+    @OneToMany(mappedBy = "user")
+    private List<Address> addresses;
 
     @OneToOne(mappedBy = "user")
     private DeliveryPerson deliveryPerson;

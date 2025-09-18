@@ -2,14 +2,20 @@ package com.example.FoodApp.delivery.controller;
 
 import com.example.FoodApp.auth_users.entity.User;
 import com.example.FoodApp.delivery.dto.DeliveryLocationDTO;
+import com.example.FoodApp.delivery.dto.UpdateLocationDTO;
 import com.example.FoodApp.delivery.entity.DeliveryLocation;
 import com.example.FoodApp.delivery.entity.DeliveryPerson;
 import com.example.FoodApp.delivery.repository.DeliveryLocationRepository;
+import com.example.FoodApp.delivery.repository.DeliveryPersonRepository;
 import com.example.FoodApp.delivery.service.DeliveryLocationService;
 import com.example.FoodApp.order.entity.Order;
 import com.example.FoodApp.order.repository.OrderRepository;
+import com.example.FoodApp.response.Response;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -25,12 +31,20 @@ public class DeliveryLocationController {
     private final DeliveryLocationService deliveryLocationService;
     private final DeliveryLocationRepository deliveryLocationRepository;
     private final OrderRepository orderRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final DeliveryPersonRepository deliveryPersonRepository;
 
+    @MessageMapping("/updateLocation")
+    public void updateLocationSocket(UpdateLocationDTO location) {
+        messagingTemplate.convertAndSend("/topic/delivery/" + location.getDeliveryId(),location);
+    }
     @PostMapping("/order/update/location")
-    @PreAuthorize("hasAuthority('DELIVERY')")
-    public ResponseEntity<?> updateLocation(@PathVariable Long deliveryId,
-                                            @RequestParam Long lat,
-                                            @RequestParam Long lng) {
+    //@PreAuthorize("hasAuthority('DELIVERY')")
+    public ResponseEntity<?> updateLocation(
+            @RequestParam Long deliveryId,
+            @RequestParam Double lat,
+            @RequestParam Double lng
+    ) {
         return ResponseEntity.ok(deliveryLocationService.updateLocation(deliveryId,lat,lng)
         );
     }
@@ -38,32 +52,6 @@ public class DeliveryLocationController {
     @PostMapping("/order/{orderId}/location")
     @PreAuthorize("hasAuthority('DELIVERY')")
     public ResponseEntity<?> startDeliveryLocation(@PathVariable Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        DeliveryPerson dp = order.getDeliveryPerson();
-        if (dp == null) {
-            return ResponseEntity.badRequest().body("No delivery person assigned");
-        }
-
-        return ResponseEntity.ok(Map.of(
-                "lat", dp.getCurrentLat(),
-                "lng", dp.getCurrentLng()
-        ));
-    }
-
-    @GetMapping("/location/order/{orderId}/tracking")
-    @PreAuthorize("hasAuthority('CUSTOMER')")
-    public ResponseEntity<?> trackOrder(@PathVariable Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        DeliveryPerson dp = order.getDeliveryPerson();
-        if (dp == null) {
-            return ResponseEntity.badRequest().body("Delivery person not yet assigned for this order");
-        }
-
-        DeliveryLocation latest = deliveryLocationService.getLatestLocation(dp.getId()).getData();
-        return ResponseEntity.ok(latest);
+        return ResponseEntity.ok(deliveryLocationService.startLocation(orderId));
     }
 }

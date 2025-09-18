@@ -4,6 +4,10 @@ import com.example.FoodApp.menu.dtos.MenuDTO;
 import com.example.FoodApp.menu.entity.Menu;
 import com.example.FoodApp.order.dtos.OrderDTO;
 import com.example.FoodApp.order.entity.Order;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.OneToMany;
 import lombok.Data;
@@ -22,6 +26,5 @@ public class RestaurantDTO {
     private Double longitude;
     private String openingHours;
     private Double rating = 0.0;
-    private List<OrderDTO> orders;
     private List<MenuDTO> menus;
 }
