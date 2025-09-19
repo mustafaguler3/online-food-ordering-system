@@ -1,5 +1,6 @@
 package com.example.FoodApp.order.services;
 
+import com.example.FoodApp.delivery.dto.DashboardDTO;
 import com.example.FoodApp.enums.OrderStatus;
 import com.example.FoodApp.order.dtos.OrderDTO;
 import com.example.FoodApp.order.dtos.OrderItemDTO;
@@ -22,4 +23,5 @@ public interface OrderService {
     Response<OrderDTO> updateOrderStatus(Long orderId,String status);
     Response<OrderDTO> getAssignedOrderById(Long orderId);
     Response<List<OrderDTO>> findDeliveredOrders();
+    Response<DashboardDTO> getDashboard(Long deliveryPersonId);
 }

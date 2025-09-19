@@ -122,6 +122,20 @@ public class DtoConverter {
         return dto;
     }
 
+    public Order toOrderEntity(OrderDTO dto, User user, List<OrderItem> orderItems) {
+        if (dto == null) return null;
+
+        Order order = new Order();
+        order.setId(dto.getId());
+        order.setOrderDate(dto.getOrderDate());
+        order.setTotalAmount(dto.getTotalAmount());
+        order.setOrderStatus(dto.getOrderStatus());
+        order.setPaymentStatus(dto.getPaymentStatus());
+        order.setUser(user);
+        order.setOrderItems(orderItems);
+        return order;
+    }
+
     public DeliveryPersonDTO toDeliveryPersonDto(DeliveryPerson deliveryPerson) {
         if (deliveryPerson == null) return null;
 
@@ -217,21 +231,6 @@ public class DtoConverter {
 
         return dto;
     }
-
-    public Order toOrderEntity(OrderDTO dto, User user, List<OrderItem> orderItems) {
-        if (dto == null) return null;
-
-        Order order = new Order();
-        order.setId(dto.getId());
-        order.setOrderDate(dto.getOrderDate());
-        order.setTotalAmount(dto.getTotalAmount());
-        order.setOrderStatus(dto.getOrderStatus());
-        order.setPaymentStatus(dto.getPaymentStatus());
-        order.setUser(user);
-        order.setOrderItems(orderItems);
-        return order;
-    }
-
     // ================= ORDER ITEM =================
     public OrderItemDTO toOrderItemDto(OrderItem orderItem) {
         if (orderItem == null) return null;

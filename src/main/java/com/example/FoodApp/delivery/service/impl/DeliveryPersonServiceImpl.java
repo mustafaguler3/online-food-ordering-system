@@ -25,7 +25,6 @@ public class DeliveryPersonServiceImpl implements DeliveryPersonService {
 
     private final DeliveryPersonRepository deliveryPersonRepository;
     private final ModelMapper modelMapper;
-    private final OrderRepository orderRepository;
 
     @Override
     public Response<List<DeliveryPersonDTO>> findAllDeliveries() {

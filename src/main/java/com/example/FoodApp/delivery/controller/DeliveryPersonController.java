@@ -1,15 +1,21 @@
 package com.example.FoodApp.delivery.controller;
 
 import com.example.FoodApp.auth_users.entity.Address;
+import com.example.FoodApp.delivery.dto.DashboardDTO;
 import com.example.FoodApp.delivery.entity.DeliveryPerson;
 import com.example.FoodApp.delivery.service.DeliveryPersonService;
 import com.example.FoodApp.enums.OrderStatus;
 import com.example.FoodApp.order.entity.Order;
 import com.example.FoodApp.order.repository.OrderRepository;
 import com.example.FoodApp.order.services.OrderService;
+import com.example.FoodApp.response.Response;
+import com.example.FoodApp.security.AuthUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -22,6 +28,21 @@ public class DeliveryPersonController {
     private final OrderService orderService;
     private final DeliveryPersonService deliveryPersonService;
     private final OrderRepository orderRepository;
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasAuthority('DELIVERY')")
+    public ResponseEntity<?> getDashboard(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+
+        Long deliveryPersonId = currentUser.getUser().getDeliveryPerson().getId();
+
+        Response<DashboardDTO> response = orderService.getDashboard(deliveryPersonId);
+
+        return ResponseEntity
+                .status(response.getStatusCode())
+                .body(response);
+    }
 
     @GetMapping("/orders/assigned")
     @PreAuthorize("hasAuthority('DELIVERY')")
@@ -46,14 +67,10 @@ public class DeliveryPersonController {
         if (dp == null) {
             return ResponseEntity.badRequest().body("No delivery person assigned");
         }
-
-        // Kurye konumu
         Map<String, Double> courierLoc = Map.of(
                 "lat", dp.getCurrentLat(),
                 "lng", dp.getCurrentLng()
         );
-
-        // Müşteri adresi (varsayılan ilk adresi alıyoruz)
         Address customerAddress = order.getUser().getAddresses().stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("Customer address not found"));
 
@@ -61,8 +78,6 @@ public class DeliveryPersonController {
                 "lat", customerAddress.getLatitude(),
                 "lng", customerAddress.getLongitude()
         );
-
-        // Restaurant konumu
         Map<String, Double> restaurantLoc = Map.of(
                 "lat", order.getRestaurant().getLatitude(),
                 "lng", order.getRestaurant().getLongitude()

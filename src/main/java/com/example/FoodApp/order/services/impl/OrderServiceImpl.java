@@ -11,6 +11,9 @@ import com.example.FoodApp.cart.repository.CartItemRepository;
 import com.example.FoodApp.cart.repository.CartRepository;
 import com.example.FoodApp.cart.services.CartService;
 import com.example.FoodApp.config.DtoConverter;
+import com.example.FoodApp.config.OrderMapper;
+import com.example.FoodApp.delivery.dto.DailyEarningDTO;
+import com.example.FoodApp.delivery.dto.DashboardDTO;
 import com.example.FoodApp.delivery.dto.DeliveryPersonDTO;
 import com.example.FoodApp.delivery.entity.DeliveryLocation;
 import com.example.FoodApp.delivery.entity.DeliveryPerson;
@@ -51,6 +54,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.*;
@@ -75,6 +79,7 @@ public class OrderServiceImpl implements OrderService {
     private final DeliveryPersonRepository deliveryPersonRepository;
     private final DeliveryLocationRepository deliveryLocationRepository;
     private final AddressRepository addressRepository;
+    private final OrderMapper orderMapper;
 
     @Value("${base.payment.link}")
     private String basePaymentLink;
@@ -295,7 +300,7 @@ public class OrderServiceImpl implements OrderService {
         DeliveryPerson dp = order.getDeliveryPerson();
         Restaurant restaurant = order.getRestaurant();
 
-        if (OrderStatus.ON_THE_WAY.name().equals(orderStatus)) {
+        if (OrderStatus.ON_THE_WAY.name().equals(orderStatus.name())) {
 
             if (dp == null) {
                 throw new RuntimeException("Delivery person not assigned to this order.");
@@ -318,10 +323,7 @@ public class OrderServiceImpl implements OrderService {
             deliveryPersonRepository.save(dp);
         }
 
-        if (OrderStatus.DELIVERED.name().equals(orderStatus.name())) {
-            dp.setHasActiveOrder(false);
-            deliveryPersonRepository.save(dp);
-        }
+
 
         return Response.<OrderDTO>builder()
                 .statusCode(HttpStatus.OK.value())
@@ -416,9 +418,14 @@ public class OrderServiceImpl implements OrderService {
         AuthUser currentUser = (AuthUser) authentication.getPrincipal();
         List<Order> orders = orderRepository.findByDeliveryPerson_Id(currentUser.getUser().getDeliveryPerson().getId());
         
-        List<OrderDTO> orderDTOS =
-                orders.stream().map(order -> modelMapper.map(order,OrderDTO.class))
-                .toList();
+        /*List<OrderDTO> orderDTOS =
+                orders
+                        .stream()
+                        .map(order -> modelMapper.map(order,OrderDTO.class))
+                .toList(); */
+        List<OrderDTO> orderDTOS = orderMapper.toOrderDtoList(orders);
+
+
 
         return Response.<List<OrderDTO>>builder()
                 .statusCode(HttpStatus.OK.value())
@@ -433,28 +440,47 @@ public class OrderServiceImpl implements OrderService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         AuthUser currentUser = (AuthUser) authentication.getPrincipal();
         DeliveryPerson deliveryPerson =
-                deliveryPersonRepository.findDeliveryPersonById(currentUser.getUser().getId());
+                deliveryPersonRepository.findDeliveryPersonById(currentUser.getUser().getDeliveryPerson().getId());
+
+        if (deliveryPerson == null) {
+            throw new RuntimeException("Delivery person not found for current user.");
+        }
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        if (!order.getDeliveryPerson().getId().equals(currentUser.getUser().getDeliveryPerson().getId())) {
+        if (order.getDeliveryPerson() == null) {
+            throw new RuntimeException("No delivery person assigned to this order. Please contact admin.");
+        }
+
+        if (!order.getDeliveryPerson().getId().equals(deliveryPerson.getId())) {
             throw new RuntimeException("Not authorized for this order");
         }
-        order.setOrderStatus(OrderStatus.valueOf(status));
 
-        if (order.getOrderStatus() == OrderStatus.DELIVERED) {
+        OrderStatus newStatus = OrderStatus.valueOf(status);
+        order.setOrderStatus(newStatus);
+
+        if (newStatus == OrderStatus.DELIVERED) {
             order.setPaymentStatus(PaymentStatus.COMPLETED);
-            deliveryPerson.setHasActiveOrder(false);
+
+            DeliveryPerson dp = order.getDeliveryPerson();
+            dp.setHasActiveOrder(false);
+            deliveryPersonRepository.save(dp);
         }
+
+        if (newStatus == OrderStatus.ON_THE_WAY) {
+            deliveryPerson.setHasActiveOrder(true);
+            deliveryPersonRepository.save(deliveryPerson);
+        }
+
         order.setOrderDate(LocalDateTime.now());
         orderRepository.save(order);
 
-        OrderDTO orderDTO = modelMapper.map(order,OrderDTO.class);
+        OrderDTO orderDTO = modelMapper.map(order, OrderDTO.class);
 
         return Response.<OrderDTO>builder()
                 .statusCode(HttpStatus.OK.value())
-                .message("Your order is on the way")
+                .message("Order status updated successfully")
                 .data(orderDTO)
                 .build();
     }
@@ -492,6 +518,68 @@ public class OrderServiceImpl implements OrderService {
         return Response.<List<OrderDTO>>builder()
                 .statusCode(HttpStatus.OK.value())
                 .data(orderDTOS)
+                .build();
+    }
+
+    @Override
+    public Response<DashboardDTO> getDashboard(Long deliveryPersonId) {
+
+        long assignedOrders = orderRepository.countByDeliveryPerson_IdAndOrderStatus(
+                deliveryPersonId,
+                OrderStatus.ASSIGNED
+        );
+
+        long completedOrders = orderRepository.countByDeliveryPerson_IdAndOrderStatus(
+                deliveryPersonId,
+                OrderStatus.DELIVERED
+        );
+
+        BigDecimal todayEarnings = orderRepository.sumEarningsByDeliveryPersonAndDateRange(
+                deliveryPersonId,
+                PaymentStatus.COMPLETED,
+                LocalDate.now().atStartOfDay(),
+                LocalDate.now().atTime(23,59,59)
+        );
+
+        if (todayEarnings == null) {
+            todayEarnings = BigDecimal.ZERO;
+        }
+
+        List<DailyEarningDTO> dailyEarnings = new ArrayList<>();
+        for (int i = 6; i>=0; i--) {
+            LocalDate day = LocalDate.now().minusDays(i);
+            BigDecimal earning = orderRepository.sumEarningsByDeliveryPersonAndDateRange(
+                    deliveryPersonId,
+                    PaymentStatus.COMPLETED,
+                    day.atStartOfDay(),
+                    day.atTime(23,59,59)
+            );
+            if (earning == null) {
+                earning = BigDecimal.ZERO;
+            }
+            dailyEarnings.add(new DailyEarningDTO(day,earning));
+        }
+        DeliveryPerson dp = deliveryPersonRepository.findDeliveryPersonById(deliveryPersonId);
+
+        if (dp == null) {
+            throw new RuntimeException("Delivery person not found");
+        }
+
+        boolean isActive = dp.isHasActiveOrder();
+
+        DashboardDTO dto =
+                DashboardDTO.builder()
+                        .assignedOrders(assignedOrders)
+                        .completedOrders(completedOrders)
+                        .todayEarnings(todayEarnings)
+                        .active(isActive)
+                        .dailyEarnings(dailyEarnings)
+                        .build();
+
+
+        return Response.<DashboardDTO>builder()
+                .statusCode(HttpStatus.OK.value())
+                .data(dto)
                 .build();
     }
 

@@ -1,5 +1,6 @@
 package com.example.FoodApp.order.dtos;
 
+import com.example.FoodApp.auth_users.dtos.AddressDTO;
 import com.example.FoodApp.auth_users.dtos.UserDTO;
 import com.example.FoodApp.auth_users.entity.User;
 import com.example.FoodApp.delivery.dto.DeliveryPersonDTO;
@@ -29,6 +30,7 @@ public class OrderDTO {
     private DeliveryPersonDTO deliveryPerson;
     private String orderCode;
     private BigDecimal totalAmount;
+    private AddressDTO deliveryAddress;
     private RestaurantDTO restaurant;
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;
