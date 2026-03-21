@@ -49,10 +49,10 @@ public class PaymentServiceImpl implements PaymentService {
     private final TemplateEngine templateEngine;
     private final ModelMapper modelMapper;
 
-    @Value("${stripe.api.secret.key}")
+    @Value("${stripe.api.secret-key}")
     private String secretKey;
 
-    //@Value("${frontend.base.url}")
+    @Value("${frontend.base.url}")
     private String frontendBaseUrl;
 
 

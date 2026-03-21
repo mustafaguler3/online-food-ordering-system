@@ -1,19 +1,21 @@
-# 1. Base image olarak OpenJDK kullanıyoruz
-FROM openjdk:17
-# 2. Çalışma dizini oluştur
+# -------- BUILD STAGE --------
+FROM maven:3.9.9-eclipse-temurin-17 AS build
+
 WORKDIR /app
-# 3. Maven wrapper ve pom.xml dosyasını kopyala
-COPY mvnw .
-COPY .mvn .mvn
+
 COPY pom.xml .
-# 4. Bağımlılıkları indir
-RUN ./mvnw dependency:go-offline -B
-# 5. Kaynak kodunu kopyala
+RUN mvn dependency:go-offline
+
 COPY src ./src
-# 6. Uygulamayı package et
-RUN ./mvnw package -DskipTests
-# 7. Port ayarı
-ENV PORT=8080
+RUN mvn clean package -DskipTests
+
+# -------- RUN STAGE --------
+FROM eclipse-temurin:17-jdk-jammy
+
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8080
-# 8. Uygulamayı çalıştır
-ENTRYPOINT ["java","-jar","target/food-app.jar"]
+
+ENTRYPOINT ["java","-jar","app.jar"]

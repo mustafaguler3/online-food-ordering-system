@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  backend:
+    image: mustafaguler/food-backend:latest
+    container_name: food-backend
+    ports:
+      - "80:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysql:3306/fooddb
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8
+    container_name: food-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: fooddb
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
