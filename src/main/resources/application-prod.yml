@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  mail:
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+
+stripe:
+  api:
+    public:
+      key: ${STRIPE_PUBLIC}
+    secret:
+      key: ${STRIPE_SECRET}
+
+secretJwtString: ${JWT_SECRET}

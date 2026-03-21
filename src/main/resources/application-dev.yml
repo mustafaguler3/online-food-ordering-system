@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: jdbc:mysql://mysql:3306/fooddb
+    username: root
+    password: 1234
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+base:
+  payment:
+    link: ${BASE_PAYMENT_LINK}
+frontend:
+  base:
+    url: ${FRONTEND_BASE_URL}
+
+stripe:
+  api:
+    public-key: ${STRIPE_PUBLIC_KEY}
+    secret-key: ${STRIPE_SECRET_KEY}
+
+secretJwtString: ${SECRET_JWT_STRING:foodAppDevSecretKey1234567890!@#}
