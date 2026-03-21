@@ -6,10 +6,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class a {
     public static void main(String[] args) {
         PasswordEncoder encoder = new BCryptPasswordEncoder();
+        int a = 9;
+        int b = 4;
 
-        String rawPassword = "123";
+        System.out.println(a ^ b);
+
+
+        /* String rawPassword = "123";
         String encodedPassword = encoder.encode(rawPassword);
 
-        System.out.println("Encoded password: " + encodedPassword);
+        System.out.println("Encoded password: " + encodedPassword); */
     }
 }
