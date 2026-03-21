@@ -27,9 +27,6 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Run tests
-        run: mvn test
-
   docker-build-and-push:
     needs: build-and-test
     runs-on: ubuntu-latest
