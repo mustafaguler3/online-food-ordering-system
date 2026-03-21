@@ -5,6 +5,7 @@ target/
 !**/src/test/**/target/
 
 .env*
+docker-compose.*.yml
 # tüm profil dosyalarını dışarıda bırak
 src/main/resources/application-*.properties
 
