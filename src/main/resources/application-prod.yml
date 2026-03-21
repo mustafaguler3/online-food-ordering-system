@@ -6,9 +6,12 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-  hibernate:
-    ddl-auto: update
-    dialect: org.hibernate.dialect.MySQL8Dialect
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
   mail:
     host: ${MAIL_HOST}
     port: ${MAIL_PORT}
@@ -31,4 +34,4 @@ stripe:
     public-key: ${STRIPE_PUBLIC_KEY}
     secret-key: ${STRIPE_SECRET_KEY}
 
-secretJwtString: ${JWT_SECRET}  # Prod secret, .env.prod veya cloud secret manager
+secretJwtString: ${JWT_SECRET}
