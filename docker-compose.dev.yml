@@ -27,15 +27,12 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SECRET_JWT_STRING: foodAppDevSecretKey1234567890!@#
-      MAIL_HOST: smtp.gmail.com
-      MAIL_PORT: 587
-      MAIL_USERNAME: mustafaguler4@gmail.com
-      MAIL_PASSWORD: 05377048490mus
-      BASE_PAYMENT_LINK: http://localhost:3000/pay?orderid=
-      FRONTEND_BASE_URL: http://localhost:3000
-      STRIPE_PUBLIC_KEY: pk_test_...
-      STRIPE_SECRET_KEY: sk_test_...
+      BASE_PAYMENT_LINK: ${BASE_PAYMENT_LINK}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL}
+      STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    env_file:
+      - .env.dev.dev
     depends_on:
       - mysql
       - redis

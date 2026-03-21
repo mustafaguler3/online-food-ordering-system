@@ -4,6 +4,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+.env*
 # tüm profil dosyalarını dışarıda bırak
 src/main/resources/application-*.properties
 
