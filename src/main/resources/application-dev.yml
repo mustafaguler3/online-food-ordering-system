@@ -6,7 +6,7 @@ spring:
     hibernate:
       ddl-auto: update
   datasource:
-    url: jdbc:mysql://mysql:3306/fooddb
+    url: jdbc:mysql://localhost:3307/fooddb
     username: root
     password: 1234
   mail:
