@@ -6,15 +6,29 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  hibernate:
+    ddl-auto: update
+    dialect: org.hibernate.dialect.MySQL8Dialect
   mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+base:
+  payment:
+    link: ${BASE_PAYMENT_LINK}
+
+frontend:
+  base:
+    url: ${FRONTEND_BASE_URL}
 
 stripe:
   api:
-    public:
-      key: ${STRIPE_PUBLIC}
-    secret:
-      key: ${STRIPE_SECRET}
+    public-key: ${STRIPE_PUBLIC_KEY}
+    secret-key: ${STRIPE_SECRET_KEY}
 
-secretJwtString: ${JWT_SECRET}
+secretJwtString: ${JWT_SECRET}  # Prod secret, .env.prod veya cloud secret manager
