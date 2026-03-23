@@ -31,6 +31,19 @@ services:
     depends_on:
       - mysql
       - redis
+  prometheus:
+    image: prom/prometheus
+    container_name: food-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    container_name: food-grafana
+    ports:
+      - "3001:3000"
 
 volumes:
   mysql_data:
