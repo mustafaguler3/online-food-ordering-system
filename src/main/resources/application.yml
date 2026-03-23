@@ -1,0 +1,17 @@
+spring:
+  profiles:
+    active: dev
+  config:
+    import: "optional:file:.env.dev"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    prometheus:
+      access: unrestricted
+  metrics:
+    export:
+      prometheus:
+        enabled: true

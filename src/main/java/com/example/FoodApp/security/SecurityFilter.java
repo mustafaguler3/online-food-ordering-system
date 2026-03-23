@@ -31,6 +31,7 @@ public class SecurityFilter {
     private final String[] publicUrl = {
             "/api/menus/**",
             "/api/auth/**",
+            "/actuator/**",
             "/api/restaurants/**",
             "/api/orders/**",
             "/api/reviews/**",
